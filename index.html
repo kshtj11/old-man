@@ -24416,7 +24416,7 @@ document.addEventListener('keydown', unmute);
 </script>
 	
 <script>
-	
+// Gamepad support script
 window.addEventListener("gamepadconnected", (event) => {
     console.log("Gamepad connected:", event.gamepad);
     // Start updating gamepad state
@@ -24470,11 +24470,8 @@ function handleGamepadInput(key, isPressed) {
         document.dispatchEvent(new KeyboardEvent("keyup", { key: key, bubbles: true }));
     }
 }
-
 </script>
-
-
+	
 </body>
-
 
 </html>
