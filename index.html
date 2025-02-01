@@ -24416,220 +24416,65 @@ document.addEventListener('keydown', unmute);
 </script>
 	
 <script>
-(function (bitsy) {
-    'use strict';
+// Create a function to map the game controller input
+function mapControllerInput() {
+    const gamepads = navigator.getGamepads();
+    const gamepad = gamepads[0]; // We assume the first gamepad
 
-    function _interopDefaultLegacy(e) {
-        return e && typeof e === 'object' && 'default' in e ? e : { 'default': e };
+    if (gamepad) {
+        // Axis values for analog sticks
+        const leftX = gamepad.axes[0]; // Left stick horizontal
+        const leftY = gamepad.axes[1]; // Left stick vertical
+        const rightX = gamepad.axes[2]; // Right stick horizontal (optional for mapping)
+        const rightY = gamepad.axes[3]; // Right stick vertical (optional for mapping)
+
+        // D-pad buttons (gamepad.buttons array) - up, down, left, right
+        const up = gamepad.buttons[12].pressed;
+        const down = gamepad.buttons[13].pressed;
+        const left = gamepad.buttons[14].pressed;
+        const right = gamepad.buttons[15].pressed;
+
+        // Normalize and map analog sticks to arrow keys
+        let x = 0;
+        let y = 0;
+
+        if (leftX < -0.5 || leftY < -0.5 || leftX > 0.5 || leftY > 0.5) {
+            // Map left analog stick
+            if (leftY < -0.5) y = -1; // Up
+            else if (leftY > 0.5) y = 1; // Down
+            if (leftX < -0.5) x = -1; // Left
+            else if (leftX > 0.5) x = 1; // Right
+        }
+
+        // Alternatively, use the D-pad (priority over analog sticks)
+        if (up) y = -1; // Up
+        if (down) y = 1; // Down
+        if (left) x = -1; // Left
+        if (right) x = 1; // Right
+
+        // Trigger arrow key events based on controller input
+        if (x === 1) {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+        } else if (x === -1) {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+        }
+
+        if (y === 1) {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+        } else if (y === -1) {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+        }
     }
+}
 
-    bitsy = bitsy || /*#__PURE__*/_interopDefaultLegacy(bitsy);
+// Continuously check for controller input and map it
+function update() {
+    mapControllerInput();
+    requestAnimationFrame(update); // Keep updating every frame
+}
 
-    var Buttons;
-    (function (Buttons) {
-        // XBOX360 wired controller configuration
-        Buttons[Buttons["A"] = 0] = "A";
-        Buttons[Buttons["X"] = 2] = "X";
-        Buttons[Buttons["B"] = 1] = "B";
-        Buttons[Buttons["Y"] = 3] = "Y";
-        Buttons[Buttons["LB"] = 4] = "LB";
-        Buttons[Buttons["RB"] = 5] = "RB";
-        Buttons[Buttons["LT"] = 6] = "LT";
-        Buttons[Buttons["RT"] = 7] = "RT";
-        Buttons[Buttons["BACK"] = 8] = "BACK";
-        Buttons[Buttons["START"] = 9] = "START";
-        Buttons[Buttons["LHAT"] = 10] = "LHAT";
-        Buttons[Buttons["RHAT"] = 11] = "RHAT";
-        Buttons[Buttons["DPAD_UP"] = 12] = "DPAD_UP";
-        Buttons[Buttons["DPAD_DOWN"] = 13] = "DPAD_DOWN";
-        Buttons[Buttons["DPAD_LEFT"] = 14] = "DPAD_LEFT";
-        Buttons[Buttons["DPAD_RIGHT"] = 15] = "DPAD_RIGHT";
-    })(Buttons || (Buttons = {}));
-
-    var Axes;
-    (function (Axes) {
-        Axes[Axes["LSTICK_H"] = 0] = "LSTICK_H";
-        Axes[Axes["LSTICK_V"] = 1] = "LSTICK_V";
-        Axes[Axes["RSTICK_H"] = 2] = "RSTICK_H";
-        Axes[Axes["RSTICK_V"] = 3] = "RSTICK_V";
-    })(Axes || (Axes = {}));
-
-    var nullGamepad = {
-        original: {
-            axes: [],
-            buttons: [],
-            connected: false,
-        },
-        disabled: true,
-        down: {},
-        justDown: {},
-        justUp: {},
-        axesPrev: {},
-    };
-
-    var Gamepads = /** @class */ (function () {
-        /**
-        * initialize gamepads
-        */
-        function Gamepads() {
-            var _this = this;
-            // settings
-            /** if `abs(an axis value)` is < `deadZone`, returns 0 instead */
-            this.deadZone = 0.25;
-            /** if `abs(1-an axis value)` is < `snapZone`, returns 1 instead */
-            this.snapZone = 0.25;
-            /** axis values between `deadZone` and `snapZone` will be run through this function
-            *
-            * defaults to normalizing between the two thresholds */
-            this.interpolate = function (value) {
-                var v = Math.max(0, Math.min(1, (value - _this.deadZone) / (1.0 - _this.snapZone - _this.deadZone)));
-                return v;
-            };
-            // internal vars
-            this.players = {};
-            this.available = false;
-            this.pollEveryFrame = false;
-            this.connected = false;
-            /**
-            * update gamepads (clears arrays, polls connections, etc.)
-            */
-            this.pollconnections = function () {
-                _this.connected = false;
-                // assume existing players' gamepads aren't enabled until they're found
-                Object.values(_this.players).forEach(function (player) {
-                    player.disabled = true;
-                });
-                var gps = navigator.getGamepads();
-                for (var i = 0; i < gps.length; ++i) {
-                    var gp = gps[i];
-                    if (gp) {
-                        if (gp.connected) {
-                            if (_this.players[gp.index] == null) {
-                                // new player
-                                _this.players[gp.index] = {
-                                    disabled: false,
-                                    original: gp,
-                                    down: {},
-                                    justDown: {},
-                                    justUp: {},
-                                    axesPrev: {},
-                                };
-                            }
-                            else {
-                                // returning player, just assign the gamepad
-                                _this.players[gp.index].original = gp;
-                            }
-                            _this.connected = true;
-                            _this.players[gp.index].disabled = false;
-                        }
-                        else {
-                            delete _this.players[gp.index];
-                        }
-                    }
-                }
-            };
-            /**
-            * update gamepads (clears arrays, polls connections, etc.)
-            */
-            this.update = function () {
-                // store the previous axis values
-                // has to be done before pollConnections since that will get the new axis values
-                Object.keys(_this.players).forEach(function (i) {
-                    var _a;
-                    var p = _this.getPlayer(i);
-                    if ((_a = p === null || p === void 0 ? void 0 : p.original) === null || _a === void 0 ? void 0 : _a.axes) {
-                        p.axesPrev = p.original.axes.slice();
-                    }
-                });
-                // poll connections and update gamepad states every frame because chrome's a lazy bum
-                if (_this.pollEveryFrame) {
-                    _this.pollconnections();
-                }
-                Object.keys(_this.players).forEach(function (i) {
-                    var _a;
-                    var p = _this.getPlayer(i);
-                    if ((_a = p === null || p === void 0 ? void 0 : p.original) === null || _a === void 0 ? void 0 : _a.buttons) {
-                        for (var j = 0; j < p.original.buttons.length; ++j) {
-                            if (p.original.buttons[j].pressed) {
-                                p.justDown[j] = !(p.down[j] === true);
-                                p.down[j] = true;
-                                p.justUp[j] = false;
-                            }
-                            else {
-                                p.justUp[j] = p.down[j] === true;
-                                p.down[j] = false;
-                                p.justDown[j] = false;
-                            }
-                        }
-                    }
-                });
-            };
-            /**
-            * @returns `player`'s gamepad
-            *
-            * if one doesn't exist, returns an object with gamepad properties reflecting a null state
-            */
-            this.getPlayer = function (player) {
-                var _a, _b, _c;
-                if (((_b = (_a = _this.players[player]) === null || _a === void 0 ? void 0 : _a.original) === null || _b === void 0 ? void 0 : _b.connected) && !((_c = _this.players[player]) === null || _c === void 0 ? void 0 : _c.disabled)) {
-                    return _this.players[player];
-                }
-                return nullGamepad;
-            };
-            /**
-            * @returns an array representing `length` axes for `player` at `offset`
-            *
-            * if `abs(an axis value)` is < `deadZone`, returns 0 instead
-            * if `abs(1-an axis value)` is < `snapZone`, returns 1/-1 instead
-            * otherwise, returns the axis value normalized between `deadZone` and `(1-snapZone)`
-            * @param {Number} offset axis index
-            * @param {Number} length number of axes to return
-            * @param {Number} player player index (`undefined` for "sum of all")
-            * @param {boolean} prev if `true` uses axis values from previous update
-            */
-            this.getAxes = function (offset, length, player, prev) {
-                if (offset === void 0) { offset = 0; }
-                if (length === void 0) { length = 2; }
-                if (prev === void 0) { prev = false; }
-                var axes = [];
-                for (var i = 0; i < length; ++i) {
-                    axes[i] = 0;
-                }
-                if (player === undefined) {
-                    Object.keys(_this.players).forEach(function (i) {
-                        var a = _this.getAxes(offset, length, i, prev);
-                        for (var j = 0; j < a.length; ++j) {
-                            axes[j] += a[j];
-                        }
-                    });
-                }
-                else {
-                    var p = _this.getPlayer(player);
-                    if (p === null || p === void 0 ? void 0 : p.original) {
-                        var axesSource = prev ? p.axesPrev : p.original.axes;
-                        var a = Object.values(axesSource).slice(offset, offset + length);
-                        for (var i = 0; i < a.length; ++i) {
-                            if (Math.abs(a[i]) < _this.deadZone) {
-                                axes[i] += 0;
-                            }
-                            else if (Math.abs(1.0 - a[i]) < _this.snapZone) {
-                                axes[i] += 1;
-                            }
-                            else if (Math.abs(-1.0 - a[i]) < _this.snapZone) {
-                                axes[i] -= 1;
-                            }
-                            else {
-                                axes[i] += Math.sign(a[i]) * _this.interpolate(Math.abs(a[i]));
-                            }
-                        }
-                    }
-                }
-                return axes;
-            };
-            /**
-           * @returns equivalent to `getAxes(axis, 1, player, prev)[0]`
-           */
-            this.getAxis = function (axis, player, prev) { return _this.getAxes
+// Start the update loop
+update();
 
 </script>
 	
