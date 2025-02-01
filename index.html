@@ -25014,7 +25014,7 @@ after('update', function () {
 </script>
 	
 <script>
-	window.addEventListener("gamepadconnected", (event) => {
+window.addEventListener("gamepadconnected", (event) => {
     console.log("Gamepad connected:", event.gamepad);
     requestAnimationFrame(updateGamepad);
 });
@@ -25024,6 +25024,7 @@ window.addEventListener("gamepaddisconnected", (event) => {
 });
 
 let activeKeys = new Set();
+let lastGamepadState = null; // To track the previous state of the gamepad
 
 function updateGamepad() {
     let gamepads = navigator.getGamepads();
@@ -25034,13 +25035,27 @@ function updateGamepad() {
         let axes = gp.axes;
         let buttons = gp.buttons;
 
-        handleGamepadInput("ArrowLeft", axes[0] < -0.5 || buttons[14].pressed);
-        handleGamepadInput("ArrowRight", axes[0] > 0.5 || buttons[15].pressed);
-        handleGamepadInput("ArrowUp", axes[1] < -0.5 || buttons[12].pressed);
-        handleGamepadInput("ArrowDown", axes[1] > 0.5 || buttons[13].pressed);
+        let currentState = {
+            ArrowLeft: axes[0] < -0.5 || buttons[14].pressed,
+            ArrowRight: axes[0] > 0.5 || buttons[15].pressed,
+            ArrowUp: axes[1] < -0.5 || buttons[12].pressed,
+            ArrowDown: axes[1] > 0.5 || buttons[13].pressed,
+        };
+
+        // Check for changes in state to minimize redundant events
+        if (lastGamepadState !== null) {
+            for (let key in currentState) {
+                let isPressed = currentState[key];
+                if (isPressed !== lastGamepadState[key]) {
+                    handleGamepadInput(key, isPressed);
+                }
+            }
+        }
+
+        lastGamepadState = currentState; // Update the last known gamepad state
     }
-    
-    requestAnimationFrame(updateGamepad);
+
+    requestAnimationFrame(updateGamepad); // Continue updating as long as gamepad is connected
 }
 
 function handleGamepadInput(key, isPressed) {
