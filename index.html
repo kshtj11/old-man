@@ -24441,19 +24441,19 @@ function updateGamepad() {
         let axes = gp.axes;
         let buttons = gp.buttons;
 
-        // Map the D-pad to WASD keys
-        handleGamepadInput("W", axes[1] < -0.5 || buttons[12].pressed); // D-pad Up -> W
-        handleGamepadInput("S", axes[1] > 0.5 || buttons[13].pressed);  // D-pad Down -> S
-        handleGamepadInput("A", axes[0] < -0.5 || buttons[14].pressed); // D-pad Left -> A
-        handleGamepadInput("D", axes[0] > 0.5 || buttons[15].pressed);  // D-pad Right -> D
+        // Map the D-pad to Arrow keys for movement
+        handleGamepadInput("ArrowUp", axes[1] < -0.5 || buttons[12].pressed);   // D-pad Up -> ArrowUp
+        handleGamepadInput("ArrowDown", axes[1] > 0.5 || buttons[13].pressed);  // D-pad Down -> ArrowDown
+        handleGamepadInput("ArrowLeft", axes[0] < -0.5 || buttons[14].pressed); // D-pad Left -> ArrowLeft
+        handleGamepadInput("ArrowRight", axes[0] > 0.5 || buttons[15].pressed);  // D-pad Right -> ArrowRight
         
-        // Map the left analog stick to WASD keys
-        handleGamepadInput("W", axes[1] < -0.5); // Left Stick Up -> W
-        handleGamepadInput("S", axes[1] > 0.5);  // Left Stick Down -> S
-        handleGamepadInput("A", axes[0] < -0.5); // Left Stick Left -> A
-        handleGamepadInput("D", axes[0] > 0.5);  // Left Stick Right -> D
-        
-        // Map the right analog stick to IJKL keys (or any other keys you prefer)
+        // Map the left analog stick to Arrow keys
+        handleGamepadInput("ArrowUp", axes[1] < -0.5); // Left Stick Up -> ArrowUp
+        handleGamepadInput("ArrowDown", axes[1] > 0.5);  // Left Stick Down -> ArrowDown
+        handleGamepadInput("ArrowLeft", axes[0] < -0.5); // Left Stick Left -> ArrowLeft
+        handleGamepadInput("ArrowRight", axes[0] > 0.5);  // Left Stick Right -> ArrowRight
+
+        // Map the right analog stick to IJKL keys (optional for camera or extra movement)
         handleGamepadInput("I", axes[3] < -0.5); // Right Stick Up -> I
         handleGamepadInput("K", axes[3] > 0.5);  // Right Stick Down -> K
         handleGamepadInput("J", axes[2] < -0.5); // Right Stick Left -> J
