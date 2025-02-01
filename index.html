@@ -25023,6 +25023,8 @@ window.addEventListener("gamepaddisconnected", (event) => {
     console.log("Gamepad disconnected:", event.gamepad);
 });
 
+let activeKeys = new Set();
+
 function updateGamepad() {
     let gamepads = navigator.getGamepads();
     if (!gamepads) return;
@@ -25032,26 +25034,25 @@ function updateGamepad() {
         let axes = gp.axes;
         let buttons = gp.buttons;
 
-        // Mapping left stick to arrow keys / WASD
-        if (axes[0] < -0.5) simulateKeyPress("ArrowLeft"); // Left
-        if (axes[0] > 0.5) simulateKeyPress("ArrowRight"); // Right
-        if (axes[1] < -0.5) simulateKeyPress("ArrowUp"); // Up
-        if (axes[1] > 0.5) simulateKeyPress("ArrowDown"); // Down
-
-        // Mapping D-pad buttons
-        if (buttons[12].pressed) simulateKeyPress("ArrowUp");
-        if (buttons[13].pressed) simulateKeyPress("ArrowDown");
-        if (buttons[14].pressed) simulateKeyPress("ArrowLeft");
-        if (buttons[15].pressed) simulateKeyPress("ArrowRight");
+        handleGamepadInput("ArrowLeft", axes[0] < -0.5 || buttons[14].pressed);
+        handleGamepadInput("ArrowRight", axes[0] > 0.5 || buttons[15].pressed);
+        handleGamepadInput("ArrowUp", axes[1] < -0.5 || buttons[12].pressed);
+        handleGamepadInput("ArrowDown", axes[1] > 0.5 || buttons[13].pressed);
     }
     
     requestAnimationFrame(updateGamepad);
 }
 
-function simulateKeyPress(key) {
-    let event = new KeyboardEvent("keydown", { key: key, bubbles: true });
-    document.dispatchEvent(event);
+function handleGamepadInput(key, isPressed) {
+    if (isPressed && !activeKeys.has(key)) {
+        activeKeys.add(key);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: key, bubbles: true }));
+    } else if (!isPressed && activeKeys.has(key)) {
+        activeKeys.delete(key);
+        document.dispatchEvent(new KeyboardEvent("keyup", { key: key, bubbles: true }));
+    }
 }
+
 </script>
 
 
