@@ -25013,7 +25013,46 @@ after('update', function () {
 }(window));
 </script>
 	
+<script>
+	window.addEventListener("gamepadconnected", (event) => {
+    console.log("Gamepad connected:", event.gamepad);
+    requestAnimationFrame(updateGamepad);
+});
 
+window.addEventListener("gamepaddisconnected", (event) => {
+    console.log("Gamepad disconnected:", event.gamepad);
+});
+
+function updateGamepad() {
+    let gamepads = navigator.getGamepads();
+    if (!gamepads) return;
+    
+    let gp = gamepads[0]; // Using the first connected gamepad
+    if (gp) {
+        let axes = gp.axes;
+        let buttons = gp.buttons;
+
+        // Mapping left stick to arrow keys / WASD
+        if (axes[0] < -0.5) simulateKeyPress("ArrowLeft"); // Left
+        if (axes[0] > 0.5) simulateKeyPress("ArrowRight"); // Right
+        if (axes[1] < -0.5) simulateKeyPress("ArrowUp"); // Up
+        if (axes[1] > 0.5) simulateKeyPress("ArrowDown"); // Down
+
+        // Mapping D-pad buttons
+        if (buttons[12].pressed) simulateKeyPress("ArrowUp");
+        if (buttons[13].pressed) simulateKeyPress("ArrowDown");
+        if (buttons[14].pressed) simulateKeyPress("ArrowLeft");
+        if (buttons[15].pressed) simulateKeyPress("ArrowRight");
+    }
+    
+    requestAnimationFrame(updateGamepad);
+}
+
+function simulateKeyPress(key) {
+    let event = new KeyboardEvent("keydown", { key: key, bubbles: true });
+    document.dispatchEvent(event);
+}
+</script>
 
 
 </body>
